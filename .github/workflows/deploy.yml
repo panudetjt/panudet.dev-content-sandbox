@@ -1,0 +1,27 @@
+name: Deploy
+
+# Sandbox for panudetjt/panudet.dev's "Publish & deploy" panel e2e (issue #9).
+# The content-sync plugin dispatches `content-updated` here with
+# client_payload {source, reason, entryId, path, status}. The PATH_NAME prefix
+# scripts the outcome:
+#   posts/zz-*    -> simulated failure (Deploy failed banner)
+#   posts/slow-*  -> 5-minute run (Deploying… long-run hint + run link)
+#   anything else -> simulated success (Live banner)
+on:
+  repository_dispatch:
+    types: [content-updated]
+permissions:
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scripted outcome
+        env:
+          PATH_NAME: ${{ github.event.client_payload.path }}
+        run: |
+          case "$PATH_NAME" in
+            posts/zz-*)   echo "simulated failure"; exit 1 ;;
+            posts/slow-*) sleep 300 ;;
+            *)            echo "simulated success" ;;
+          esac
